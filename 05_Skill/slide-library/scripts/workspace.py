@@ -2,11 +2,13 @@
 """Slide Library workspace tools. Python 3.9+, local files only, no network."""
 import argparse
 import base64
+from collections import Counter
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
 import html
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -284,8 +286,22 @@ def register_source(root, path, decision):
     return sid, state
 
 
+def apply_scope_change(root, job):
+    old_id = job.get("replaces_scope")
+    if not old_id:
+        return
+    new_id = job["entry"]["source_id"]
+    old_path = "02_Library/sources/" + old_id + "/extract.json"
+    new_path = "02_Library/sources/" + new_id + "/extract.json"
+    old, new = load(root, old_path), load(root, new_path)
+    old["source"]["scope_replaced_by"] = new_id
+    new["source"].pop("scope_replaced_by", None)
+    save(root, old_path, old)
+    save(root, new_path, new)
+
+
 def recover(root):
-    index = load(root, ".slide-library/index.json")
+    index = load(root, ".slide-library/index.json", {"schema_version": 1, "files": {}})
     recovered = []
     journal_dir = safe(root, ".slide-library/imports")
     if journal_dir.exists():
@@ -295,6 +311,7 @@ def recover(root):
                 continue
             entry = job["entry"]
             move_original(root, job["from"], entry["path"], entry["sha256"])
+            apply_scope_change(root, job)
             index["files"][entry["id"]] = entry
             save(root, ".slide-library/index.json", index)
             job["status"] = "complete"; job["completed_at"] = now()
@@ -307,7 +324,7 @@ def import_files(root, plan=None):
     manifest = require(root)
     recovered = recover(root)
     report = scan(root)
-    index = load(root, ".slide-library/index.json")
+    index = load(root, ".slide-library/index.json", {"schema_version": 1, "files": {}})
     choices = (plan or {}).get("files", {})
     known = {f["candidate_id"] for f in report["files"]}
     if set(choices) - known:
@@ -340,11 +357,14 @@ def import_files(root, plan=None):
                      "role": choice.get("role", "both"),
                      "extraction_status": state, "imported_at": now(),
                      "duplicate_of": next((v["id"] for v in index["files"].values()
-                                           if v["sha256"] == item["sha256"]), None)}
+                                           if v["sha256"] == item["sha256"] and v["id"] != ident), None)}
             job = {"status": "prepared", "from": item["path"], "entry": entry, "created_at": now()}
+            if previous.get("sha256") == item["sha256"] and previous.get("source_id") != sid:
+                job["replaces_scope"] = previous["source_id"]
             journal = ".slide-library/imports/" + ident + "-" + uuid.uuid4().hex[:8] + ".json"
             save(root, journal, job)
             move_original(root, item["path"], dest, item["sha256"])
+            apply_scope_change(root, job)
             # Changed files supersede this location, while old snapshots/journals remain.
             for old_id, old in list(index["files"].items()):
                 if old["path"] == dest:
@@ -458,10 +478,10 @@ img{width:100%;height:240px;object-fit:contain}h2{font-size:18px}p{line-height:1
             "mapping": mapping}
 
 
-def check(root):
+def check(root, record_ids=None):
     manifest = require(root, active=False)
     errors, warnings = [], []
-    legacy = library.validate(safe(root, "02_Library"))
+    legacy = library.validate(safe(root, "02_Library"), record_ids=record_ids)
     errors += legacy["errors"]
     warnings += [w for w in legacy["warnings"] if w != "No curated design profile yet"]
     for item in load(root, ".slide-library/index.json", {"files": {}})["files"].values():
@@ -480,6 +500,9 @@ def check(root):
         assoc = asset["association"]
         if assoc.get("status") not in ASSOCIATIONS:
             errors.append("Invalid image association: " + asset["id"])
+        elif assoc.get("status") in {"user_confirmed", "source_labeled"} and not all(
+                isinstance(assoc.get(k), str) and assoc[k].strip() for k in ["label", "evidence"]):
+            errors.append("Image association needs a label and evidence: " + asset["id"])
     profile = load(root, "03_Design/profile.json")
     ready = False
     if not profile:
@@ -488,18 +511,26 @@ def check(root):
         rules = profile.get("rules", {})
         size, content = rules.get("slide_cm", {}), rules.get("content", {})
         try:
-            if not (size["width"] > 0 and size["height"] > 0 and content["x"] >= 0 and
+            values = [size[k] for k in ["width", "height"]] + [content[k] for k in ["x", "y", "w", "bottom"]]
+            if not all(type(v) in {int, float} and math.isfinite(v) for v in values):
+                errors.append("Design dimensions must be finite numbers")
+            elif not (size["width"] > 0 and size["height"] > 0 and content["x"] >= 0 and
                     content["y"] >= 0 and content["w"] > 0 and content["bottom"] > content["y"] and
                     content["x"] + content["w"] <= size["width"] + .001 and
                     content["bottom"] <= size["height"]):
                 errors.append("Design content bounds are invalid")
             for layout in rules.get("layouts", {}).values():
                 widths = layout.get("widths", [])
-                if any(w <= 0 for w in widths) or sum(widths) + max(0, len(widths)-1) * layout.get("gap", 0) > content["w"] + .001:
+                gap = layout.get("gap", 0)
+                if (not all(type(v) in {int, float} and math.isfinite(v) for v in [*widths, gap]) or
+                        gap < 0 or any(w <= 0 for w in widths) or
+                        sum(widths) + max(0, len(widths)-1) * gap > content["w"] + .001):
                     errors.append("Design columns exceed content width")
             foot = rules.get("footnotes", {})
-            if foot and not (content["y"] < foot["top"] - foot.get("gap", 0)
-                             < foot["bottom"] <= size["height"]):
+            if foot and not (all(type(v) in {int, float} and math.isfinite(v) for v in
+                                [foot["top"], foot["bottom"], foot.get("gap", 0)]) and
+                             foot.get("gap", 0) >= 0 and content["y"] < foot["top"] - foot.get("gap", 0)
+                             and foot["top"] < foot["bottom"] <= size["height"]):
                 errors.append("Invalid footnote reservation")
             if not rules.get("font") or not rules.get("colors"):
                 errors.append("Design needs fonts and colors")
@@ -510,6 +541,19 @@ def check(root):
         for sid in profile.get("source_ids", []):
             if not safe(root, "02_Library/sources/" + sid + "/extract.json").is_file():
                 errors.append("Unknown design source: " + sid)
+        for pattern in profile.get("patterns", []):
+            reference = pattern.get("reference")
+            if not reference:
+                continue
+            source_path = safe(root, "02_Library/sources/" + reference.get("source_id", "") + "/extract.json")
+            source = library.read_json(source_path) if source_path.is_file() else {}
+            if not any(s["number"] == reference.get("slide") for s in source.get("slides", [])):
+                errors.append("Unknown design pattern reference: " + str(pattern.get("id", "unnamed")))
+        for rel in profile.get("export_files", []):
+            if Path(rel).as_posix() == "profile.json":
+                errors.append("profile.json is reserved for the design profile")
+            if not safe(safe(root, "03_Design"), rel).is_file():
+                errors.append("Missing design export file: " + rel)
         ready = profile.get("status") == "ready" and bool(profile.get("visual_review"))
         if not ready:
             warnings.append("Design still needs Claude's visual review")
@@ -532,6 +576,8 @@ def capture_text(root, source_id, evidence):
     require(root)
     path = safe(root, "02_Library/sources/" + source_id + "/extract.json")
     data = library.read_json(path)
+    old_bytes = path.read_bytes()
+    baseline = Counter(library.validate(safe(root, "02_Library"))["errors"])
     source = data["source"]
     if digest(safe(path.parent, source["snapshot"])) != source["sha256"]:
         raise ValueError("Source snapshot changed")
@@ -546,7 +592,14 @@ def capture_text(root, source_id, evidence):
     library.write_json(path.with_name("extract.previous-" + uuid.uuid4().hex[:8] + ".json"), data)
     data.update(paragraphs=paragraphs, text="\n\n".join(p["text"] for p in paragraphs),
                 extraction_status="captured", extraction_method=evidence["method"])
-    library.write_json(path, data)
+    try:
+        library.write_json(path, data)
+        new_errors = Counter(library.validate(safe(root, "02_Library"))["errors"]) - baseline
+        if new_errors:
+            raise ValueError("Capture would invalidate existing evidence: " + json.dumps(sorted(new_errors)))
+    except Exception:
+        path.write_bytes(old_bytes)
+        raise
     index = load(root, ".slide-library/index.json")
     for entry in index["files"].values():
         if entry["source_id"] == source_id:
@@ -562,7 +615,7 @@ def save_design(root, profile):
     old = target.read_bytes() if target.exists() else None
     library.write_json(target, profile)
     try:
-        result = check(root)
+        result = check(root, record_ids=[])
         if not result["valid"]:
             raise ValueError("Invalid design or library: " + json.dumps(result["errors"]))
     except Exception:
@@ -578,7 +631,42 @@ def save_design(root, profile):
     manifest = require(root)
     manifest.update(status="draft", updated_at=now())
     save(root, "setup.json", manifest)
-    return result
+    return check(root)
+
+
+def save_records(root, records):
+    """Validate a complete curation batch and restore prior records on failure."""
+    require(root)
+    records = [records] if isinstance(records, dict) else records
+    if not isinstance(records, list) or not records:
+        raise ValueError("Supply a record or a nonempty list of records")
+    ids = [r.get("id") if isinstance(r, dict) else None for r in records]
+    if any(not isinstance(i, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", i) for i in ids) or len(set(ids)) != len(ids):
+        raise ValueError("Records need distinct lowercase IDs")
+    targets = [safe(root, "02_Library/records/" + ident + ".json") for ident in ids]
+    previous = {path: path.read_bytes() if path.exists() else None for path in targets}
+    try:
+        for path, record in zip(targets, records):
+            library.write_json(path, record)
+        result = library.validate(safe(root, "02_Library"), record_ids=ids)
+        if not result["valid"]:
+            raise ValueError("Invalid content records: " + json.dumps(result["errors"]))
+    except Exception:
+        for path, old in previous.items():
+            if old is None:
+                path.unlink(missing_ok=True)
+            else:
+                path.write_bytes(old)
+        raise
+    for path, old in previous.items():
+        if old is not None:
+            version = safe(root, "02_Library/.versions/" + path.stem + "-" + uuid.uuid4().hex + ".json")
+            version.parent.mkdir(exist_ok=True)
+            version.write_bytes(old)
+    manifest = require(root)
+    manifest["updated_at"] = now()
+    save(root, "setup.json", manifest)
+    return {"saved": ids, "validation": library.validate(safe(root, "02_Library"))}
 
 
 def finalize(root):
@@ -639,7 +727,8 @@ def export_profile(root, output, project=None):
     for record in records:
         eligible = []
         for asset in record.get("assets", []):
-            if asset.get("role") == "portrait" and not asset.get("identity_verified"):
+            if asset.get("role") == "portrait" and not (asset.get("identity_verified") is True and
+                    isinstance(asset.get("identity_evidence"), str) and asset["identity_evidence"].strip()):
                 continue
             sid, media = asset.get("source_id"), asset.get("media")
             if sid and media:
@@ -658,6 +747,17 @@ def export_profile(root, output, project=None):
             if not path.is_file():
                 raise ValueError("Missing curated design file: " + rel)
             files["design/" + Path(rel).as_posix()] = path.read_bytes()
+    # Preserve citation provenance without copying unrelated source text or raw decks.
+    cited = set(profile.get("source_ids", []))
+    cited.update(p["reference"]["source_id"] for p in profile.get("patterns", []) if p.get("reference"))
+    for record in records:
+        cited.update(e["source_id"] for fact in record.get("facts", []) for e in fact.get("evidence", []))
+        cited.update(a["source_id"] for a in record.get("assets", []))
+    provenance = {}
+    for sid in sorted(cited):
+        source = load(root, "02_Library/sources/" + sid + "/extract.json")["source"]
+        provenance[sid] = {key: source[key] for key in
+                           ["id", "filename", "sha256", "imported_at", "date_note"] if key in source}
     skill = f"""---
 name: {name}
 description: Use the saved {slug} content library and design to build presentations with Slide Library in PowerPoint.
@@ -666,7 +766,9 @@ description: Use the saved {slug} content library and design to build presentati
 # {manifest['name']} presentation profile
 
 This package is a saved snapshot, not a live folder connection. Use it when the user selects
-this setup. Read content.json, assets.json and design/profile.json relative to this skill.
+this setup. Read content.json, assets.json, sources.json and design/profile.json relative to this skill.
+Use sources.json to resolve source IDs to filenames and fingerprints for citations. Only
+the selected evidence excerpts are included; full originals remain in the user's workspace.
 Use the Slide Library workflow if enabled, or follow these rules directly:
 read the requested outline or rough slides, retrieve relevant facts and assets, then edit
 the open deck with native PowerPoint tools. Load the included template when present.
@@ -681,7 +783,7 @@ Do not write back to this installed skill. Refresh the original workspace and ex
 snapshot to update it. This package has no Outlook connection or local-folder permissions.
 """
     files["SKILL.md"] = skill.encode()
-    for rel, data in [("content.json", records), ("assets.json", exported_assets),
+    for rel, data in [("content.json", records), ("assets.json", exported_assets), ("sources.json", provenance),
                       ("design/profile.json", profile),
                       ("profile.json", {"name": manifest["name"], "id": manifest["id"],
                                         "exported_at": now(), "project": project})]:
@@ -702,7 +804,7 @@ snapshot to update it. This package has no Outlook connection or local-folder pe
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for cmd in ["setup", "scan", "import", "review", "label", "capture-text", "save-design",
+    for cmd in ["setup", "scan", "import", "review", "label", "capture-text", "save-design", "save-records",
                 "finalize", "validate", "status", "list", "archive", "restore", "export"]:
         p = sub.add_parser(cmd)
         p.add_argument("--root", required=True, help="Actual accessible setup folder; do not use a cloud container's Desktop")
@@ -710,7 +812,7 @@ def main():
             p.add_argument("--name", required=cmd != "setup")
         if cmd == "import":
             p.add_argument("--plan", help="JSON classification from Claude, keyed by candidate_id")
-        if cmd in {"label", "capture-text", "save-design"}:
+        if cmd in {"label", "capture-text", "save-design", "save-records"}:
             p.add_argument("--file", required=True, help="Asset associations supported by actual user/source evidence")
         if cmd == "capture-text":
             p.add_argument("--source-id", required=True)
@@ -733,6 +835,7 @@ def main():
             elif args.command == "label": result = labels(root, library.read_json(args.file))
             elif args.command == "capture-text": result = capture_text(root, args.source_id, library.read_json(args.file))
             elif args.command == "save-design": result = save_design(root, library.read_json(args.file))
+            elif args.command == "save-records": result = save_records(root, library.read_json(args.file))
             elif args.command == "finalize": result = finalize(root)
             elif args.command == "validate": result = check(root)
             elif args.command == "status": result = {"setup": require(root, False), "validation": check(root)}

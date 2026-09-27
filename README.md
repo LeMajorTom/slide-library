@@ -15,9 +15,19 @@ The release also includes a full Claude plugin ZIP, release metadata and SHA-256
 3. Use `update` to organize and learn the new material.
 4. In PowerPoint, use `build` with rough slides or a short outline.
 
-When PowerPoint cannot access the local folder, export your setup as a separate personal profile skill. Keep that profile and your workspace private. Reference learning preserves the source presentation and embedded objects. The skill does not activate OLE objects or disable Claude's approval prompts.
+When PowerPoint cannot access the local folder, use `export` to save your ready setup as a separate personal profile skill. Keep that profile and your workspace private. Use `delete-setup` to archive a named setup and `restore` to reactivate it without deleting files. A restored setup is a draft until its content and design have been checked again.
+
+Reference learning preserves the source presentation and embedded objects. The skill does not activate OLE objects or disable Claude's approval prompts. A setup becomes ready only after Claude has reviewed the references and a rendered composition trial; passing storage checks alone is insufficient.
 
 See [installation and workflow details](09_Plugin/README.md).
+
+The [0.2.0 validation report](09_Plugin/VALIDATION.md) records the automated checks, actual Claude Code command tests and remaining Office runtime checks.
+
+## Scope
+
+This is a skill/plugin for Claude, not a standalone Office add-in. Its Python helpers organize, validate, search and export the library. Claude interprets references and composes editable slides with the tools available in PowerPoint. Installing the skill does not create a desktop folder or grant file access; `setup` creates the folder in a location the user has authorized.
+
+The helper reads PPTX/POTX, DOCX, text, Markdown and saved EML files. PDF text extraction uses an existing optional pypdf installation. Other formats remain available for review with the host's readers. Photos are assigned from user labels or source captions, never face recognition. Embedded portraits require a recorded explanation of the identity association before export.
 
 ## Updates
 

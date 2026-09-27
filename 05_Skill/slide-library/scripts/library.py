@@ -209,7 +209,7 @@ def text_extract(path):
 
 def extract(path, media_dir=None):
     suffix = Path(path).suffix.lower()
-    if suffix == ".pptx":
+    if suffix in {".pptx", ".potx"}:
         return pptx_extract(path, media_dir)
     if suffix in {".txt", ".md", ".eml"}:
         return text_extract(path)
@@ -327,7 +327,17 @@ def in_scope(record, project):
 
 
 def evidence_in_scope(source, evidence, project):
-    return in_scope(source["source"], project) or evidence.get("slide") in source["source"].get("reusable_slides", [])
+    if source["source"].get("scope_replaced_by"):
+        return False
+    if in_scope(source["source"], project):
+        return True
+    if evidence.get("slide") not in source["source"].get("reusable_slides", []):
+        return False
+    slide = next((s for s in source.get("slides", []) if s["number"] == evidence.get("slide")), None)
+    if not slide or slide.get("hidden"):
+        return False
+    # A reuse exception covers visible shape evidence, never notes or a whole source.
+    return any(s["id"] == str(evidence.get("shape_id")) for s in slide.get("shapes", []))
 
 
 def search(library, query, kind=None, project=None, raw=False):
@@ -337,9 +347,14 @@ def search(library, query, kind=None, project=None, raw=False):
                 "unternehmensvorstellung": {"company"}, "leistungen": {"service"}, "referenzen": {"case_study"}}
     q |= set().union(*(synonyms.get(w, set()) for w in list(q)))
     matches = []
+    sources = {p.parent.name: read_json(p) for p in (library / "sources").glob("*/extract.json")}
     for path in sorted((library / "records").glob("*.json")):
         r = read_json(path)
         if r.get("status") == "retired" or not in_scope(r, project) or (kind and r.get("kind") != kind):
+            continue
+        evidence = [e for fact in r.get("facts", []) for e in fact.get("evidence", [])] + r.get("assets", [])
+        if any(not sources.get(e.get("source_id")) or
+               not evidence_in_scope(sources[e["source_id"]], e, project) for e in evidence):
             continue
         text = " ".join([r.get("label", ""), r.get("kind", ""), *r.get("aliases", []), *r.get("tags", []),
                          *[f.get("text", "") for f in r.get("facts", [])]])
@@ -350,10 +365,12 @@ def search(library, query, kind=None, project=None, raw=False):
     if raw:
         for path in sorted((library / "sources").glob("*/extract.json")):
             d = read_json(path)
-            if "content" not in d["source"]["roles"]:
+            if "content" not in d["source"]["roles"] or d["source"].get("scope_replaced_by"):
                 continue
             for s in d.get("slides", []):
-                if s["hidden"] or not evidence_in_scope(d, {"slide": s["number"]}, project):
+                if s["hidden"] or not (in_scope(d["source"], project) or
+                                       any(evidence_in_scope(d, {"slide": s["number"], "shape_id": shape["id"]}, project)
+                                           for shape in s["shapes"])):
                     continue
                 score = len(q & words(s["text"]))
                 if score:
@@ -362,7 +379,7 @@ def search(library, query, kind=None, project=None, raw=False):
     return sorted(matches, key=lambda r: (-r["score"], r.get("id", r.get("source_id", ""))))[:30]
 
 
-def validate(library):
+def validate(library, record_ids=None):
     library = Path(library)
     errors, warnings = [], []
     sources = {p.parent.name: read_json(p) for p in (library / "sources").glob("*/extract.json")}
@@ -376,6 +393,8 @@ def validate(library):
     for path in sorted((library / "records").glob("*.json")):
         r = read_json(path); records.append(r)
         label = r.get("id", path.name)
+        if record_ids is not None and label not in record_ids:
+            continue
         if r.get("kind") not in KINDS or not r.get("label") or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", label):
             errors.append(f"{label}: invalid identity/kind")
         if r.get("status") not in {"source_grounded", "reviewed", "needs_review", "retired"}:
@@ -415,8 +434,9 @@ def validate(library):
             shape = next((s for s in slide.get("shapes", []) if s["id"] == str(asset.get("shape_id"))), {})
             if asset.get("media") not in shape.get("media", []) or not resolve_under(library / "sources" / asset["source_id"], asset.get("media", "")).is_file():
                 errors.append(f"{label}: invalid asset link")
-            if asset.get("role") == "portrait" and not asset.get("identity_verified"):
-                warnings.append(f"{label}: portrait identity not verified; do not use automatically")
+            if asset.get("role") == "portrait" and not (asset.get("identity_verified") is True and
+                    isinstance(asset.get("identity_evidence"), str) and asset["identity_evidence"].strip()):
+                warnings.append(f"{label}: portrait needs explicit identity evidence; do not use automatically")
     all_ids = [r.get("id") for r in records]
     if len(all_ids) != len(set(all_ids)):
         errors.append("Duplicate record IDs")
@@ -429,15 +449,18 @@ def validate(library):
         if p.get("template") and not resolve_under(library, p["template"]).is_file():
             errors.append("design: missing template")
         rules = p.get("rules", {}); c = rules.get("content", {}); size = rules.get("slide_cm", {})
-        if c and (c["x"] < 0 or c["y"] < 0 or c["x"]+c["w"] > size["width"]+0.001 or c["bottom"] > size["height"]):
-            errors.append("design: content outside slide")
-        for name, layout in rules.get("layouts", {}).items():
-            widths = layout.get("widths", [])
-            if widths and sum(widths) + max(0, len(widths)-1)*layout.get("gap", 0) > c["w"]+0.001:
-                errors.append(f"design/{name}: columns exceed content width")
-        foot = rules.get("footnotes", {})
-        if foot and (foot["top"]-foot.get("gap", 0) <= c["y"] or foot["bottom"] > size["height"]):
-            errors.append("design: invalid footnote reservation")
+        try:
+            if c and (c["x"] < 0 or c["y"] < 0 or c["x"]+c["w"] > size["width"]+0.001 or c["bottom"] > size["height"]):
+                errors.append("design: content outside slide")
+            for name, layout in rules.get("layouts", {}).items():
+                widths = layout.get("widths", [])
+                if widths and sum(widths) + max(0, len(widths)-1)*layout.get("gap", 0) > c["w"]+0.001:
+                    errors.append(f"design/{name}: columns exceed content width")
+            foot = rules.get("footnotes", {})
+            if foot and (foot["top"]-foot.get("gap", 0) <= c["y"] or foot["bottom"] > size["height"]):
+                errors.append("design: invalid footnote reservation")
+        except (KeyError, TypeError):
+            errors.append("design: incomplete or invalid dimensions")
         for pattern in p.get("patterns", []):
             ref = pattern.get("reference", {})
             if ref and not any(s["number"] == ref.get("slide") for s in sources.get(ref.get("source_id"), {}).get("slides", [])):

@@ -11,7 +11,7 @@ Use English for skill documentation, default folder names, help, prompts and sta
 
 ## Command entry point
 
-Read [commands.md](references/commands.md) to route `setup`, `build`, `list`, `use`, `update`, `delete-setup`, `version`, `check-updates`, `upgrade` and `help`. These are conversational commands within this skill, not shell commands or independently registered PowerPoint slash commands. The user can select this skill in the add-in's skill picker and type a command, or request the same action naturally.
+Read [commands.md](references/commands.md) to route `setup`, `build`, `list`, `use`, `update`, `export`, `delete-setup`, `restore`, `version`, `check-updates`, `upgrade` and `help`. These are conversational commands within this skill, not shell commands or independently registered PowerPoint slash commands. The user can select this skill in the add-in's skill picker and type a command, or request the same action naturally.
 
 For core skill versions and upgrades, read [updates.md](references/updates.md). `update` learns library content; `upgrade` guides core skill replacement. Read the active version and GitHub repository from version.json. On check-updates, check that repository's latest release when authorized network access is available. A configured address is not proof of a published release. Installation into Claude remains manual.
 

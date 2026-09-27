@@ -29,7 +29,7 @@ def check():
             if "://" not in target:
                 assert (path.parent / target.split("#")[0]).exists(), (path, target)
     commands = {p.stem for p in (plugin / "commands").glob("*.md")}
-    assert commands == {"setup", "build", "update", "use", "list", "delete-setup", "help", "version", "check-updates", "upgrade"}
+    assert commands == {"setup", "build", "update", "use", "list", "delete-setup", "restore", "export", "help", "version", "check-updates", "upgrade"}
     outputs = {}
     version = manifest["version"]
     release = json.loads((ROOT / "dist/release.json").read_text())

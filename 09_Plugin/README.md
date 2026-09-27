@@ -35,7 +35,7 @@ Open rough slides or supply a short outline, select Slide Library and use **buil
 
 Local folder permissions do not automatically carry into PowerPoint. If that surface cannot access your workspace, ask Claude in Desktop/Cowork:
 
-**Export this setup as a profile skill for PowerPoint.**
+**export — save this setup as a profile skill for PowerPoint.**
 
 Enable the resulting profile ZIP under Customize → Skills. In PowerPoint select that profile and Slide Library, then use build. A profile is a saved snapshot, not a live connection. Export a new version after updating the folder. Raw source archives and project material are excluded by default.
 
@@ -54,9 +54,11 @@ If Claude asks to continue a script and lists oleObject*.bin files, the list alo
 | build | Complete rough slides or an outline |
 | list | Show accessible setups |
 | use My Company | Select a setup/design for this conversation |
+| export | Export a ready setup as a personal profile skill |
 | delete-setup My Company | Archive the named setup; preserve files |
+| restore My Company | Restore an archived setup as a draft for review |
 | version | Show the active core skill version |
-| check-updates | Compare a supplied release file or skill ZIP |
+| check-updates | Check GitHub Releases or compare a supplied release file/ZIP |
 | upgrade | Check a new skill ZIP and guide manual installation |
 | help | Show commands and starting examples |
 
@@ -76,7 +78,7 @@ Use an existing authorized Microsoft 365 connection configured for read-only acc
 
 ## What was validated
 
-Local tests cover sorting, name collisions, duplicate preservation, interrupted move recovery, path boundaries, image assignment persistence, changed images, evidence capture, source extraction, archival and profile exports. The Claude CLI validates the plugin structure during packaging.
+Local tests cover sorting, name collisions, duplicate preservation, interrupted move recovery, path boundaries, image assignment evidence, changed images, source extraction, content rollback, design geometry and references, archival, restoration and profile exports. The builder validates the skill files, archive contents and release checksums. Claude Code validation is a separate release check, not an implicit part of packaging.
 
 Actual upload to your Claude account, account-specific folder permissions and native PowerPoint editing must be exercised in that environment. No local library, design or company material is bundled.
 
@@ -88,7 +90,7 @@ The canonical skill source is ../05_Skill/slide-library. Set the release version
 
 The build runs the tests first and package validation afterward. It writes versioned ZIPs, a versioned release manifest and the current release.json. Prior versioned ZIPs are retained. The build script replaces only its generated slide-library folder and its release outputs. It never modifies a user's desktop, Claude settings or library. Nothing is published or installed by this command.
 
-In the standalone GitHub repository, pushing a matching vMAJOR.MINOR.PATCH tag triggers the release workflow. GitHub Actions runs the build and publishes the checked ZIPs and manifest together. Main-branch and pull-request pushes only validate. To prepare the initial standalone repository from the original project, use prepare_github.py; it copies an explicit list of generic source/test/tooling files and never the user's reference decks or library.
+In the standalone GitHub repository, pushing a matching vMAJOR.MINOR.PATCH tag triggers the release workflow. GitHub Actions runs the build and publishes the checked ZIPs and manifest together. Main-branch and pull-request pushes only validate. Keep personal examples, workspaces and profile exports outside this repository.
 
 Official installation references:
 - https://support.claude.com/en/articles/13837440-use-plugins-in-claude

@@ -30,7 +30,7 @@ assets.json                     standalone assets and saved image associations
     "temporal": "as_of_source",
     "evidence": [{"source_id": "source-id", "slide": 46, "shape_id": "3", "quote": "Senior Consultant"}]
   }],
-  "assets": [{"role": "portrait", "source_id": "source-id", "slide": 46, "shape_id": "8", "media": "media/image.png", "identity_verified": true}],
+  "assets": [{"role": "portrait", "source_id": "source-id", "slide": 46, "shape_id": "8", "media": "media/image.png", "identity_verified": true, "identity_evidence": "An unambiguous source caption links this image to C.B.; inspected on slide 46."}],
   "issues": ["Only initials supplied; full identity is unresolved."]
 }
 ```
@@ -39,11 +39,13 @@ Use a stable lowercase ID. Valid status: `source_grounded`, `reviewed`, `needs_r
 
 `temporal` is `evergreen`, `historical`, or `as_of_source`. Source-grounded draft facts can be used with their scope/date but are not official current company statements. Do not create inferred facts such as availability from a historical CV. `scope` is `reusable` or `project`; the latter requires a project name. Reusable records must not cite project-only evidence. For a mixed reference deck, `source.reusable_slides` may list individually inspected slides that contain reusable company material, profiles or anonymous cases within the user's library-building request. Keep the overall source project-scoped. This exception applies only to visible shape evidence on those slides, not private speaker notes or the whole deck. Do not relabel client financials as reusable.
 
-Asset media paths are relative to their source directory. Select photos by the inspected slide/shape. Preserve initials and record unresolved identities. Cross-references should use record IDs rather than duplicate profiles.
+Asset media paths are relative to their source directory. Select photos by the inspected slide/shape. A named embedded portrait needs identity_verified: true AND nonempty identity_evidence stating the actual user mapping or unambiguous source caption. This is attribution evidence, never permission to identify faces. Existing records with only the older boolean remain readable but their portraits are omitted from export until evidence is supplied. Preserve initials and record unresolved identities. Cross-references should use record IDs rather than duplicate profiles.
 
 ## Design profile
 
 `03_Design/profile.json` contains `source_ids`, `template`, `observations` and `patterns`. `template` and optional `export_files` are relative paths inside `03_Design`. Use `status: draft` during curation; after visual inspection set `status: ready` and record a truthful `visual_review` description. Put usable selected values under `rules`:
+
+The example below illustrates the schema only. Derive dimensions, fonts, colors and layouts from the user's actual references; do not treat these example values as a default brand.
 
 ```json
 {

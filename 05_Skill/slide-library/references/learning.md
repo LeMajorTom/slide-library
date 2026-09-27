@@ -14,7 +14,7 @@ Inspect all candidate reusable slides and representative design families at read
 
 ## Curate reusable content
 
-Read [data-model.md](data-model.md). Create separate records for people, company overview, services, locations, case studies and contacts. Build the index automatically by saving records under `records/`; search reads these files directly.
+Read [data-model.md](data-model.md). Create separate records for people, company overview, services, locations, case studies and contacts. Save curated batches with `workspace.py save-records` as described in runtime.md; it validates the evidence and rolls back a failed batch. Search reads the resulting `records/` files directly.
 
 - **Person:** exact name or initials, role, skills, industries, languages, experience, achievements and source date. Group fields by the actual person, not by XML text order. Associate a photo from explicit user labeling or supporting source context after inspecting the slide or standalone asset; do not identify people from appearance. Same initials alone do not establish identity. Keep ambiguous associations unresolved as described in intake.md. Team-card, expert-slide and CV copy can be composed from the same record.
 - **Company:** identity, short introduction, capabilities, geographic coverage, working approach and dated metrics. Separate evergreen descriptions from numbers and staffing counts. Store short/long variants only when they materially help; do not repeat facts in disconnected copies.

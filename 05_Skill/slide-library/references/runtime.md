@@ -33,7 +33,7 @@ Categories are Presentations, Photos, Logos, Icons, Documents, Emails, Needs_Rev
 
     python scripts/workspace.py import --root "<folder>" --plan "<plan.json>"
 
-Without a plan this safely organizes and extracts with conservative defaults. Passing a plan for an unchanged file explicitly revises its scope/category. For mixed client decks, mark individually inspected reusable slides using source.reusable_slides from data-model.md; do not promote the whole deck.
+Without a plan this safely organizes and extracts with conservative defaults. Passing a plan for an unchanged file explicitly revises its scope/category. A scope change revokes the old scope snapshot for search and evidence reuse while preserving its bytes. Reconcile records that cited it before finalizing or exporting. For mixed client decks, mark individually inspected reusable slides using source.reusable_slides from data-model.md; do not promote the whole deck.
 
 Loose inbox files move into 01_Examples categories. Nested user groups are indexed in place to preserve relative links. Re-running import resumes prepared moves and skips unchanged files. Duplicate occurrences are retained, and destination collisions never overwrite existing files.
 
@@ -41,7 +41,11 @@ Inspect errors, skipped files, missing sources and extraction_status. needs_read
 
 ## Curate source-grounded content
 
-Follow learning.md and data-model.md. Write records into 02_Library/records with real source/slide/shape or source/paragraph evidence. Use library.py search to retrieve records. Standalone images belong in assets.json rather than fabricated slide-image references.
+Follow learning.md and data-model.md. Prepare a JSON record or list of records with real source/slide/shape or source/paragraph evidence, then save through:
+
+    python scripts/workspace.py save-records --root "<folder>" --file "<curated-records.json>"
+
+The helper validates quotes, links, scope and identifiers before accepting the batch. It restores prior records if validation fails and keeps previous versions of replaced records. Existing errors in unrelated records remain visible in the returned full-library validation without blocking an otherwise valid batch or design save; finalize and export still require a valid library. Claude still verifies that the quoted evidence supports the interpretation. Use library.py search to retrieve records. Standalone images belong in assets.json rather than fabricated slide-image references.
 
 If a host reader supplies text from an unsupported source, verify it against the file and save a capture:
 
@@ -50,7 +54,7 @@ If a host reader supplies text from an unsupported source, verify it against the
 
     python scripts/workspace.py capture-text --root "<folder>" --source-id "<id>" --file "<capture.json>"
 
-Paragraph numbers become citation anchors. Include page references in the text/method when relevant. The original and previous extraction remain preserved. The script checks structure and source integrity; Claude checks transcription accuracy.
+Paragraph numbers become citation anchors. Include page references in the text/method when relevant. The original and previous extraction remain preserved. A recapture that breaks an existing citation is rejected and the prior extract restored; preserve cited paragraph numbers/text or reconcile affected records first. The script checks structure and source integrity; Claude checks transcription accuracy.
 
 ## Review and assign images
 
@@ -93,7 +97,7 @@ If PowerPoint cannot access the folder:
 
     python scripts/workspace.py export --root "<folder>" --out "<output folder>/my-company-profile.zip"
 
-Export requires a reviewed, valid design. It creates a separate profile skill containing eligible records, evidence excerpts, clearly associated reusable assets and explicitly declared curated design files. It excludes raw source archives and project material by default. Add --project "<name>" only for an explicitly requested project export.
+Export requires a reviewed, valid design. It creates a separate profile skill containing eligible records, evidence excerpts, a sources.json index of cited filenames and fingerprints, clearly associated reusable assets and explicitly declared curated design files. This preserves readable citations without bundling full source text. It excludes raw source archives and project material by default. Add --project "<name>" only for an explicitly requested project export.
 
 Enable the profile ZIP through Customize > Skills > Upload a skill. In PowerPoint select Slide Library and the named profile, then use build. The profile also works independently. It is a snapshot: export and replace it after workspace updates. Do not promise automatic synchronization.
 
