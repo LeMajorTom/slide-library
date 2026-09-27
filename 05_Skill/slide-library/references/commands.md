@@ -32,7 +32,7 @@ Purpose: complete the user's sparse slides or chat outline with the selected set
 2. An explicit scope such as “slides 3–5” wins. Otherwise use a meaningful selected subset of slides when the add-in exposes it; with no subset, process the rough presentation as a whole. Do not interpret the ordinary current-slide cursor as a selected subset. State the scope briefly before editing.
 3. Read slide headings, rough facts, supplied emails and relevant notes. Follow [composition.md](composition.md). Preserve complete slides outside the requested scope. Inside scope, preserve explicit facts and intentional completed work while filling the gaps.
 4. Retrieve appropriate records, derive an agenda from the actual deck, choose patterns, write copy and create editable objects. If the user gave a chat outline with no existing slides, create that outline in the working deck.
-5. Verify visible output and report only material gaps. Do not add new reusable facts or change design defaults as a side effect of `build`.
+5. Save claim-to-source maps in the changed slides' speaker notes, preserving existing notes. Read every changed slide's notes back and repair missing maps before completing the build, following composition.md. Verify visible output and report only material gaps. Do not add new reusable facts or change design defaults as a side effect of `build`.
 
 Examples: `build`, `build slides 3–5`, `build company overview, team, approach – for an introductory meeting`.
 

@@ -176,6 +176,24 @@ class WorkspaceTests(unittest.TestCase):
         self.assertIn("default-src 'none'", page)
         self.assertTrue(result["mapping"]["1"].startswith("asset-"))
 
+    def test_labeled_image_descriptions_survive_refresh_and_import(self):
+        self.drop("photo.png", PNG)
+        w.import_files(self.root)
+        asset = next(iter(w.refresh_assets(self.root)["assets"].values()))
+        w.labels(self.root, {asset["id"]: {"status": "source_labeled", "label": "Example person",
+                 "evidence": "Explicit fixture caption", "description": "Portrait on neutral background",
+                 "tags": ["portrait", "team"], "use": "portrait"}})
+        w.review(self.root)
+        self.assertEqual([], w.import_files(self.root)["imported"])
+        reloaded = w.refresh_assets(self.root)["assets"][asset["id"]]
+        self.assertEqual("Portrait on neutral background", reloaded["description"])
+        self.assertEqual(["portrait", "team"], reloaded["tags"])
+        self.assertEqual("Example person", reloaded["association"]["label"])
+        for bad in [{"description": 12}, {"tags": "portrait"}, {"tags": [12]}]:
+            with self.assertRaises(ValueError):
+                w.labels(self.root, {asset["id"]: dict(status="unresolved", **bad)})
+        self.assertEqual(reloaded, w.refresh_assets(self.root)["assets"][asset["id"]])
+
     def test_manual_rename_keeps_asset_mapping(self):
         self.drop("photo.png", PNG)
         w.import_files(self.root)

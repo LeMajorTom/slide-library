@@ -91,6 +91,76 @@ class WorkflowTests(unittest.TestCase):
         w.save_records(self.root, record)
         self.assertEqual(before, next((self.root / "02_Library/.versions").glob("*.json")).read_bytes())
 
+    def test_portable_photo_provenance_and_unresolved_exclusion(self):
+        png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7WQAAAAASUVORK5CYII=")
+        for name, data in [("portrait.png", png), ("unlabeled.png", png + b"fixture")]:
+            (self.root / "00_Throw_In" / name).write_bytes(data)
+        plan = {"files": {i["candidate_id"]: {"scope": "reusable"} for i in w.scan(self.root)["files"]}}
+        w.import_files(self.root, plan)
+        assets = list(w.refresh_assets(self.root)["assets"].values())
+        portrait = next(a for a in assets if a["path"].endswith("/portrait.png"))
+        w.labels(self.root, {portrait["id"]: {"status": "source_labeled", "label": "Fictional test person",
+                 "entity_id": "person-test", "evidence": "Fixture caption explicitly labels portrait.png",
+                 "use": "portrait"}})
+        w.save_design(self.root, self.design())
+        exported = w.export_profile(self.root, Path(self.temp.name) / "photo-profile.zip")
+        with ZipFile(exported["package"]) as archive:
+            prefix = exported["skill_name"] + "/"
+            packed = json.loads(archive.read(prefix + "assets.json"))
+            self.assertEqual(1, len(packed))
+            self.assertEqual(portrait["id"], packed[0]["id"])
+            self.assertEqual(png, archive.read(prefix + packed[0]["path"]))
+            sources = json.loads(archive.read(prefix + "sources.json"))
+            self.assertEqual("portrait.png", sources[portrait["source_id"]]["filename"])
+            self.assertEqual(portrait["sha256"], sources[portrait["source_id"]]["sha256"])
+        # A new process can reload the on-disk mapping and reimport without losing it.
+        self.assertEqual([], self.cli("import")["imported"])
+        saved = w.load(self.root, "02_Library/assets.json")["assets"][portrait["id"]]
+        self.assertEqual("source_labeled", saved["association"]["status"])
+        self.assertEqual("person-test", saved["association"]["entity_id"])
+
+    def test_identical_photos_keep_distinct_exported_filenames(self):
+        png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7WQAAAAASUVORK5CYII=")
+        names = {"portrait-A.png", "team-photo.png"}
+        for name in names:
+            (self.root / "00_Throw_In" / name).write_bytes(png)
+        plan = {"files": {i["candidate_id"]: {"scope": "reusable"} for i in w.scan(self.root)["files"]}}
+        w.import_files(self.root, plan)
+        assets = list(w.refresh_assets(self.root)["assets"].values())
+        self.assertEqual(2, len(assets))
+        self.assertEqual(1, len({a["source_id"] for a in assets}))
+        w.labels(self.root, {a["id"]: {"status": "source_labeled", "label": "Fictional person",
+                 "evidence": "Explicit test caption", "use": "portrait"} for a in assets})
+        w.save_design(self.root, self.design())
+        exported = w.export_profile(self.root, Path(self.temp.name) / "duplicate-profile.zip")
+        with ZipFile(exported["package"]) as archive:
+            prefix = exported["skill_name"] + "/"
+            packed = json.loads(archive.read(prefix + "assets.json"))
+            self.assertEqual(names, {a["filename"] for a in packed})
+            original_names = {a["id"]: Path(a["path"]).name for a in assets}
+            for asset in packed:
+                self.assertEqual(original_names[asset["id"]], asset["filename"])
+                self.assertEqual(png, archive.read(prefix + asset["path"]))
+
+    def test_missing_photo_source_blocks_export_cleanly(self):
+        png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a7WQAAAAASUVORK5CYII=")
+        (self.root / "00_Throw_In/portrait.png").write_bytes(png)
+        plan = {"files": {i["candidate_id"]: {"scope": "reusable"} for i in w.scan(self.root)["files"]}}
+        w.import_files(self.root, plan)
+        asset = next(iter(w.refresh_assets(self.root)["assets"].values()))
+        w.labels(self.root, {asset["id"]: {"status": "source_labeled", "label": "Fictional person",
+                 "evidence": "Explicit test caption", "use": "portrait"}})
+        w.save_design(self.root, self.design())
+        source = self.root / "02_Library/sources" / asset["source_id"] / "extract.json"
+        source.unlink()
+        result = w.check(self.root)
+        self.assertFalse(result["valid"])
+        self.assertFalse(result["ready"])
+        output = Path(self.temp.name) / "missing-source.zip"
+        with self.assertRaisesRegex(ValueError, "Missing asset source"):
+            w.export_profile(self.root, output)
+        self.assertFalse(output.exists())
+
     def test_invalid_design_reference_and_geometry_rejected(self):
         original = self.design()
         w.save_design(self.root, original)

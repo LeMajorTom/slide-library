@@ -21,7 +21,7 @@ Reference learning preserves the source presentation and embedded objects. The s
 
 See [installation and workflow details](09_Plugin/README.md).
 
-The [0.2.0 validation report](09_Plugin/VALIDATION.md) records the automated checks, actual Claude Code command tests and remaining Office runtime checks.
+The [0.2.1 validation report](09_Plugin/VALIDATION.md) records the automated checks, actual Claude Code checks and native PowerPoint tests.
 
 ## Scope
 

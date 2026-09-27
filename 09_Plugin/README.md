@@ -39,6 +39,8 @@ Local folder permissions do not automatically carry into PowerPoint. If that sur
 
 Enable the resulting profile ZIP under Customize → Skills. In PowerPoint select that profile and Slide Library, then use build. A profile is a saved snapshot, not a live connection. Export a new version after updating the folder. Raw source archives and project material are excluded by default.
 
+To verify persistence, start a **new** PowerPoint chat after installation, select the profile, and ask **use My Company**. Claude should read the saved profile's identity, export date, records and design, without learning the references again. Then use **build**. After a library update, export and replace the same profile through its **Replace** control in Customize → Skills; verify the new export date in a fresh chat. Core skill updates and personal profile updates are separate. If a newly installed or replaced skill is missing or stale in PowerPoint, reload the Claude add-in from its add-in options, then start a fresh chat and verify the profile export date or core version again.
+
 ## Embedded-object warnings during setup
 
 Reference learning preserves the original presentation and its embedded objects. Version 0.1.1 explicitly instructs Claude to avoid reference cleanup/resaving and inventories embedded package parts without parsing their contents. The helper already used read-only extraction in version 0.1.0. This update clarifies Claude's orchestration; it does not certify a source file safe or disable the host's approval prompts.
@@ -63,6 +65,8 @@ If Claude asks to continue a script and lists oleObject*.bin files, the list alo
 | help | Show commands and starting examples |
 
 Image classification and factual curation are performed by Claude. The helper does not identify faces or invent names. Explicit user mappings and source captions are retained as evidence.
+
+For a quick photo assignment, include a short caption file such as **Photo captions.txt** with **portrait-A.png = Alex Morgan**. Claude checks that explicit source label and links the image to the matching profile. An ambiguous filename or an unlabeled photo remains unresolved; the numbered image review lets you resolve it once. Unresolved and disputed photos are excluded from the exported named-person assets. Original filenames and fingerprints accompany included photos for traceable citations.
 
 ## Updates with a personal Claude account
 

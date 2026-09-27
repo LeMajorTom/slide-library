@@ -1,15 +1,15 @@
 {
   "name": "slide-library",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "workspace_schema_version": 1,
   "github_repository": "LeMajorTom/slide-library",
   "release_notes": [
-    "Add explicit export and restore commands for portable PowerPoint profiles and archived setups.",
-    "Validate curated content before saving, restore failed batches and retain previous record versions.",
-    "Require traceable portrait assignments and prevent hidden slides from entering reusable content.",
-    "Validate design references, finite layout geometry and declared assets; support POTX references.",
-    "Include cited-source filenames and fingerprints in portable profiles without bundling raw sources.",
-    "Preserve existing citations during text recapture and revoke outdated source permissions after scope changes.",
-    "Allow independent curation while unrelated records need repair; harden import recovery and export paths."
+    "Write and read back source notes for every changed slide during the first build.",
+    "Include original filenames and fingerprints for standalone photos in exported profile provenance.",
+    "Preserve reviewed image descriptions and tags across repeated imports and image reviews.",
+    "Load saved profile content, design and image associations explicitly in fresh PowerPoint chats.",
+    "Keep profile selection read-only; read project facts in speaker notes and use requested associated photos during build.",
+    "Document verification of profile replacement after updating the source workspace.",
+    "Preserve per-photo filenames for duplicate image bytes and reject missing asset provenance before export."
   ]
 }

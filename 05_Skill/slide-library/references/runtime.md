@@ -101,6 +101,8 @@ Export requires a reviewed, valid design. It creates a separate profile skill co
 
 Enable the profile ZIP through Customize > Skills > Upload a skill. In PowerPoint select Slide Library and the named profile, then use build. The profile also works independently. It is a snapshot: export and replace it after workspace updates. Do not promise automatic synchronization.
 
+Verify the handoff in a fresh PowerPoint chat: select the installed profile and read its profile.json, content.json, assets.json, sources.json and design/profile.json. Confirm the setup name, export date, content and asset counts. Then build from the new chat's brief without relearning the original references. Missing access to the local folder does not invalidate a readable installed snapshot. Use the actual replacement control when refreshing that same profile; its skill name remains stable for the same workspace. Verify the new export date and changed facts in another fresh chat before claiming the update is available there.
+
 ## Manage setups
 
     python scripts/workspace.py list --root "<user-selected parent folder>"
