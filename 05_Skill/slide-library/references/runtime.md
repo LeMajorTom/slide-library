@@ -89,6 +89,8 @@ Set status to draft while calibrating. Set status to ready and add a truthful vi
 
 save-design checks basic geometry and evidence integrity, retains the previous version and rejects invalid updates. finalize requires a reviewed design and passing checks. It does not itself inspect slide appearance. A design-only setup is allowed; disclose its empty content library.
 
+For the first learned setup, create and inspect a separate editable preview with the host's presentation tools and show the setup overview in [onboarding.md](onboarding.md). This also applies after the first update of an initially empty workspace. The Python helpers do not render or generate that sample. Save generated previews under 04_Presentations, never inside the reference archive or as unrequested slides in the open deck.
+
 ## Build and portable handoff
 
 When the folder is reachable, retrieve its records, assets and design directly. Read rough slides or the chat outline and apply composition.md with native editable PowerPoint objects. Claude performs semantic composition and visual review; no script claims to generate the finished deck alone.

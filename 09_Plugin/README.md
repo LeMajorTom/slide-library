@@ -10,6 +10,14 @@ For the documented PowerPoint skill route, use **dist/slide-library-skill-@VERSI
 
 Claude for PowerPoint must already be installed and signed in to the same Claude account. Type / in its sidebar to select Slide Library, then use the commands below. Plugin command wrappers are namespaced in Claude Code; they are not independent global /setup commands in PowerPoint.
 
+## Guided entry
+
+Select Slide Library without a command to start. It offers **Set up my library**, **Build a presentation** and **Update my library**, or a short summary of an accessible existing setup. Answer in ordinary language. Explicit requests such as build or setup skip this menu.
+
+The first learned setup includes a compact overview of available content, design, associated/unresolved images and the actual storage state. Claude creates one separate editable design preview and checks its appearance when the host tools allow it. The sample is saved under **04_Presentations** or returned as a separate attachment; setup does not insert it into a reference or working deck. If the host cannot create or inspect it, that limitation stays visible.
+
+Draft setups resume at the missing step. Unresolved images are grouped into one numbered review, and optional missing portraits do not block otherwise usable content. After updating a folder, Claude explains whether the personal profile still needs export and replacement in PowerPoint.
+
 ## First setup
 
 1. In Claude Desktop/Cowork, select the desktop location where Claude may create your workspace.
@@ -17,7 +25,7 @@ Claude for PowerPoint must already be installed and signed in to the same Claude
 3. The helper creates the workspace below. It does not create it merely because the plugin was installed.
 4. Drop reference presentations, photos, logos, documents or saved emails into **00_Throw_In**.
 5. Ask **update**. Claude inspects the files, uses the helper to sort/import them, and curates content and design.
-6. If needed, name unresolved pictures using the numbered image review.
+6. Review the setup overview and sample slide. If needed, name unresolved pictures in one reply using the numbered image review.
 
     My Slide System/
       00_Throw_In/
@@ -39,7 +47,7 @@ Local folder permissions do not automatically carry into PowerPoint. If that sur
 
 Enable the resulting profile ZIP under Customize → Skills. In PowerPoint select that profile and Slide Library, then use build. A profile is a saved snapshot, not a live connection. Export a new version after updating the folder. Raw source archives and project material are excluded by default.
 
-To verify persistence, start a **new** PowerPoint chat after installation, select the profile, and ask **use My Company**. Claude should read the saved profile's identity, export date, records and design, without learning the references again. Then use **build**. After a library update, export and replace the same profile through its **Replace** control in Customize → Skills; verify the new export date in a fresh chat. Core skill updates and personal profile updates are separate. If a newly installed or replaced skill is missing or stale in PowerPoint, reload the Claude add-in from its add-in options, then start a fresh chat and verify the profile export date or core version again.
+To verify persistence, start a **new** PowerPoint chat after installation, select the profile, and ask **use My Company**. Claude should read the saved profile's identity, export date, records and design, without learning the references again. Then use **build**. After a library update, export and replace the same profile through its **Replace** control in Customize → Skills; verify the new export date in a fresh chat. Core skill updates and personal profile updates are separate. Re-export an existing personal profile if you want it to include newer standalone profile instructions. If a newly installed or replaced skill is missing or stale in PowerPoint, reload the Claude add-in from its add-in options, then start a fresh chat and verify the profile export date or core version again.
 
 ## Embedded-object warnings during setup
 

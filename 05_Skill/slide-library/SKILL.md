@@ -11,6 +11,8 @@ Use English for skill documentation, default folder names, help, prompts and sta
 
 ## Command entry point
 
+For a bare skill selection or a request to get started, read [onboarding.md](references/onboarding.md). Offer a short guided entry based on accessible setups. An explicit command or clear task goes directly to its workflow without a welcome menu. On the first learned setup, use the same reference for the compact setup overview and a separate editable design preview.
+
 Read [commands.md](references/commands.md) to route `setup`, `build`, `list`, `use`, `update`, `export`, `delete-setup`, `restore`, `version`, `check-updates`, `upgrade` and `help`. These are conversational commands within this skill, not shell commands or independently registered PowerPoint slash commands. The user can select this skill in the add-in's skill picker and type a command, or request the same action naturally.
 
 For core skill versions and upgrades, read [updates.md](references/updates.md). `update` learns library content; `upgrade` guides core skill replacement. Read the active version and GitHub repository from version.json. On check-updates, check that repository's latest release when authorized network access is available. A configured address is not proof of a published release. Installation into Claude remains manual.
@@ -71,3 +73,5 @@ Extraction is idempotent for identical bytes and scope. When importing an update
 ## Completion
 
 For learning: a populated, searchable library; a source-backed design profile with reviewed patterns; usable asset associations; and a short description of material gaps. For composition: an editable presentation, visually checked slides and saved source maps in each changed slide's speaker notes. Preserve existing notes and read the maps back before reporting completion; repair omissions in the same build. Keep build diagnostics and technical field names off audience-facing slides. Tell the user what is actually usable, and distinguish inspected output from untested workflow instructions.
+
+When the host cannot create or edit slides, state that limitation once, give a concise plain-language content draft if useful, and name the next step needed. Keep coordinates, font specifications, source-map dumps and internal identifiers out of the chat handoff unless the user asks for implementation detail. Do not present a text draft as a finished deck.

@@ -1,15 +1,13 @@
 {
   "name": "slide-library",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "workspace_schema_version": 1,
   "github_repository": "LeMajorTom/slide-library",
   "release_notes": [
-    "Write and read back source notes for every changed slide during the first build.",
-    "Include original filenames and fingerprints for standalone photos in exported profile provenance.",
-    "Preserve reviewed image descriptions and tags across repeated imports and image reviews.",
-    "Load saved profile content, design and image associations explicitly in fresh PowerPoint chats.",
-    "Keep profile selection read-only; read project facts in speaker notes and use requested associated photos during build.",
-    "Document verification of profile replacement after updating the source workspace.",
-    "Preserve per-photo filenames for duplicate image bytes and reject missing asset provenance before export."
+    "Guide first-time users through setup, build or update without requiring command knowledge.",
+    "Adapt the entry to an existing setup, draft workspace or installed profile; clear requests bypass the welcome menu.",
+    "Finish first-time learning with a compact setup overview and one separate editable design preview when host tools allow.",
+    "Collect unresolved photo assignments in one numbered review and keep optional gaps from blocking usable content.",
+    "Distinguish a saved folder, exported profile and verified PowerPoint handoff; preserve explicit snapshot refreshes."
   ]
 }

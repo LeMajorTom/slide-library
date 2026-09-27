@@ -8,6 +8,12 @@ Open this repository's **Releases**, choose the latest version and download **sl
 
 The release also includes a full Claude plugin ZIP, release metadata and SHA-256 checksums. Use the standalone **skill** ZIP for the Skills upload route. Uploading it as an attachment in the PowerPoint chat does not install it.
 
+## Getting started
+
+Select Slide Library and describe what you need. First-time users get three choices: **Set up my library**, **Build a presentation**, or **Update my library**. An existing setup opens with a brief summary; a clear request goes straight to the work.
+
+The first learned setup finishes with an overview of content, design, image associations and storage status, plus one separate editable sample slide when the host can create and inspect it. Reference and working presentations remain unchanged during setup. Missing preview capabilities or unresolved photos are stated explicitly.
+
 ## Personal workflow
 
 1. Use `setup` in Claude Desktop/Cowork with access to your chosen folder.
@@ -21,7 +27,7 @@ Reference learning preserves the source presentation and embedded objects. The s
 
 See [installation and workflow details](09_Plugin/README.md).
 
-The [0.2.1 validation report](09_Plugin/VALIDATION.md) records the automated checks, actual Claude Code checks and native PowerPoint tests.
+The [0.3.0 validation report](09_Plugin/VALIDATION.md) records the automated checks, actual Claude Code checks and native PowerPoint tests.
 
 ## Scope
 

@@ -137,11 +137,22 @@ def setup(root, name):
         "# Design\n\nClaude saves inspected design rules in profile.json and editable templates here.\n"
         "A new setup has no learned design yet.\n", encoding="utf-8")
     safe(root, "START_HERE.md").write_text(
-        "# My Slide System\n\nDrop presentations, photos, logos, documents and saved emails into "
-        "00_Throw_In. Ask Slide Library to update this folder. It sorts originals into 01_Examples, "
-        "then learns reusable content and design.\n\nOpen rough slides in PowerPoint and use build. "
-        "If PowerPoint cannot reach this folder, export a profile skill and enable it in Claude.\n"
-        "\nNew files are processed on request; there is no background watcher.\n", encoding="utf-8")
+        "# Welcome to Slide Library\n\nTurn rough slides or a short outline into a presentation "
+        "using your own content and design. This new workspace is a draft until examples have been learned.\n\n"
+        "1. Add example presentations, photos, logos, documents or saved emails to 00_Throw_In. "
+        "For named photos, include a caption such as portrait-A.png = Alex Morgan.\n"
+        "2. Ask Slide Library to update this folder. It organizes originals in 01_Examples, "
+        "then learns reusable content and design.\n"
+        "3. Review the setup overview and separate editable sample slide. If any pictures are "
+        "unassigned, answer the numbered image review once; unknown identities can stay unassigned. "
+        "Preview creation and visual checking depend on the available presentation tools.\n"
+        "4. Open rough slides in PowerPoint or write an outline, then ask build. If PowerPoint "
+        "cannot reach this folder, export a personal profile skill, enable it in Claude, "
+        "and select it in PowerPoint first.\n\n"
+        "You can describe what you need in ordinary language; commands are optional.\n\n"
+        "After adding new material, ask update. An installed profile is a snapshot: export "
+        "and replace it to make folder changes available in PowerPoint. New files are processed "
+        "on request; there is no background watcher.\n", encoding="utf-8")
     return {"created": True, "root": str(root), "setup": manifest}
 
 
@@ -788,6 +799,12 @@ authorize editing the open deck. Wait for build or another request to create/edi
 In a fresh chat, read these saved files again; do not depend on a previous conversation.
 Use profile.json to identify this setup and its export date. A missing local workspace
 does not prevent using this installed snapshot. Do not run setup again to load it.
+On selection without a task, briefly say "{manifest['name']} is loaded", its export date,
+usable content categories/counts and selected design, then invite rough slides or a chat
+outline. Keep this to a few lines; do not dump every stored fact or show a new-user menu.
+If the user already supplied a clear build request, start that workflow directly.
+For library changes, explain the authorized folder update, export and profile replacement
+route. Never claim that an exported ZIP is installed or that this snapshot is live-synced.
 Use sources.json to resolve source IDs to filenames and fingerprints for citations. Only
 the selected evidence excerpts are included; full originals remain in the user's workspace.
 For standalone images, cite the asset's own filename in assets.json when available;
@@ -811,6 +828,9 @@ Notes travel with a shared deck. When anonymization or confidentiality requires 
 use an approved source alias and keep the full filename mapping in the private workspace.
 Read each changed slide's notes back and repair missing citations before completing build.
 If notes cannot be edited, save an accessible separate source map and disclose the limit.
+If slide creation/editing is unavailable, state that once, offer a concise plain-language
+content draft and the next step. Do not dump coordinates, font specifications, source maps
+or internal identifiers into chat unless requested. A text draft is not a finished deck.
 Interface language is English; presentation language follows the brief.
 
 Facts and design were curated from user material. Source-grounded is not independently

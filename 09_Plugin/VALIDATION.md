@@ -1,45 +1,37 @@
-# Release validation — 0.2.1
+# Release validation — 0.3.0
 
-Validated on 2026-09-27 with Python 3.9.6, Claude Code 2.1.270, Claude Customize → Skills and the native Claude PowerPoint sidebar on macOS. All test content and portraits are synthetic.
+Validated on 2026-09-27. This release adds guided entry, a setup overview, a separate first-setup design preview workflow and clearer profile handoff instructions. It does not change the workspace schema or the slide-editing backend.
 
 ## Automated checks
 
-- 52 tests pass. Coverage includes source-byte preservation, embedded-object inventories, import recovery, scope revocation, citation-preserving recapture, independent curation, content rollback, design references and geometry, image attribution, profile ZIP export, restore and GitHub update metadata.
-- New regressions verify that reviewed photo descriptions and tags survive refresh/reimport, invalid metadata is rejected, exported standalone portraits retain filename/hash provenance and unresolved photos are excluded. Additional regressions preserve distinct filenames for identical image bytes and reject missing asset sources before export.
-- Package validation checks frontmatter, local documentation links, all twelve command wrappers, ZIP contents, source/package equality and release checksums.
+- All 52 existing helper and release tests pass. They cover source preservation, import/recovery, scoped evidence, photo associations, duplicate-image filenames, missing asset sources, export, archive/restore and update metadata.
+- The package builder validates frontmatter, local reference links, all twelve command wrappers, source/package equality, archive integrity and checksums. The new onboarding reference is included in both distributions.
+- The skill-creator quick validator and strict Claude plugin manifest validator pass. PyYAML was installed only in a temporary validation environment; the plugin gained no runtime dependency.
+- Helper changes are limited to the generated START_HERE guide and standalone profile instructions. No wording-matching unit tests were added as a substitute for behavior testing.
 
-## Actual Claude Code workflow
+## Claude Code behavior checks
 
-Claude Code inspected synthetic reference slides and portraits, curated six sourced records and a reviewed three-pattern design, persisted photo associations, finalized the workspace and exported a personal profile. New helper processes reloaded the saved data. Repeated import added no duplicates. Four originals and four retained source snapshots remained byte-identical. Deliberate attempts to promote project-only and note-only facts into reusable records were rejected and rolled back.
+Read-only Claude Code sessions used the generated plugin and isolated synthetic profile/workspace fixtures. They had no PowerPoint editing tools, file-write tools, network connectors or mailbox access.
 
-The initial command attempt selected an obsolete local helper copy and was stopped. The corrected run used the canonical 0.2.1 source and independently compared the inherited extraction with a fresh 0.2.1 extraction before continuing. Shell permission denials were resolved within the authorized workflow; this was not a clean first attempt.
+- **First use:** an empty directory produced the three English choices: Set up my library, Build a presentation, Update my library. No setup, preview or installation was claimed as completed.
+- **Saved profile:** selecting the exported profile loaded its real name, export date, six reusable records, associated portrait and design, then invited rough slides or an outline without repeating the first-use menu.
+- **Explicit build:** a direct two-slide request bypassed the welcome menu. With no editing tools it disclosed the limitation and produced a content draft; it did not claim an edited PPTX or saved slide notes. An initial overly technical response led to a narrower plain-language fallback; the repeated case omitted coordinates and font specifications.
+- **Setup without preview tools:** the saved draft, content/design coverage and unresolved image were read. The response kept preview creation, visual checking and finalization pending rather than inventing them. Optional unresolved images are to remain unassigned without blocking usable work.
 
-The previous 0.2.0 release additionally verified actual plugin loading and discovery of all twelve namespaced commands, setup/archive/restore command execution, and the source recapture and scope-revocation fixes.
+The first attempted first-use test shared a directory with the saved draft fixture. It correctly followed the existing-setup branch, so it was not counted as a no-library test; that case was repeated in an empty directory. Early overly detailed setup replies also motivated a six-line overview limit, optional image-review handoff and an explicit distinction between an unverified export and a nonexistent export.
 
-## Independent Claude Code review
+The normal setup command was also exercised against the existing draft. It resumed that identity, used the five-part overview and kept the unresolved photo optional. Read-only setup responses still sometimes added explanatory detail beyond the requested compact format; their predictions about finalization or source fingerprints are not treated as executed validation. Actual helper validation is covered by the automated suite, not by these prose responses.
 
-Claude Code ran the full 50-test suite and separately probed metadata persistence through refresh, explicit reimport, scope changes, file renaming and changed image bytes. It found no regression in image associations or source paths. Its two concrete findings were fixed: standalone assets now keep their individual filename even when source bytes are deduplicated, and missing asset extraction metadata is rejected by validation before export. Two new regression tests bring the suite to 52. The docs clarify that slide notes travel with a deck and anonymized material can use source aliases. The release packages were rebuilt after the documentation changes.
+## Account installation
 
-A separate focused Claude Code verification reread both fixes, ran all 52 tests and concluded that both reported issues were fixed with no remaining blocker. This verdict covers the two export changes; native PowerPoint is verified separately below.
+The final 0.3.0 standalone skill ZIP replaced the existing core skill through Claude Customize → Skills. The enabled state, new onboarding resource and version.json product version 0.3.0 were verified in the account UI. This confirms installation; it does not prove the new preview workflow has run in PowerPoint.
 
-The strict Claude plugin manifest validator accepts the generated plugin with no errors or warnings.
+## Runtime limits and previous evidence
 
-## Native PowerPoint test
+These behavior checks validate routing and truthful capability handling, not the visual quality of a newly generated setup preview. No new native PowerPoint composition trial was performed for 0.3.0. The separate editable preview is created by Claude only when the active host exposes suitable presentation/file tools, and visual checking still needs rendering or inspection tools. A source screenshot or a prose style description is not accepted as an editable preview.
 
-The core 0.2.1 skill and a separately exported personal profile were installed and replaced through Claude's account UI. A fresh PowerPoint chat loaded the profile without the original reference files or earlier conversation. Selecting the corrected profile preserved all four slides and their notes unchanged.
+The [0.2.1 native PowerPoint validation](https://github.com/LeMajorTom/slide-library/blob/v0.2.1/09_Plugin/VALIDATION.md) remains the recorded end-to-end evidence for saved-profile composition, portrait insertion, project email facts and per-slide source maps. It is not presented as a fresh 0.3.0 preview test.
 
-A single explicit build request then filled four rough headings: Agenda, Company overview, Team introduction and Next steps. The request asked for the available profile portraits but did not repeat the stored company facts or call out citations or the email in slide notes.
+Personal profiles remain snapshots. Existing profiles need re-export/replacement to pick up new standalone profile instructions. A core upgrade does not modify private libraries, install profiles, or provide live synchronization. Outlook remains excluded from this work.
 
-The saved PPTX passed 17 independent checks: four slides retained, headings preserved, editable native text, correct people and roles, the historical headcount date retained, project email dates and owner used, original notes preserved, source maps present on every slide, source filenames present on factual slides, exactly one team portrait, its bytes identical to the labelled input, six saved profile records, unresolved portrait excluded and included-photo provenance resolvable. A private test sentinel was absent from both slide copy and exported reusable content. Source maps were also read to check the claim-level references.
-
-All four slides were exported locally by PowerPoint to PDF, rendered and inspected. No visible clipping or text/image overlap was found. The result matches the synthetic reference's Arial, teal/navy palette, white background and footer treatment. This validates this fixture, not universal layout quality.
-
-The first profile trial exposed two instruction gaps: profile selection started editing without a build request, and project email facts in notes were overlooked. Both were corrected before the successful fresh-chat retest. That first trial is not counted as a pass. The final build wrote and reread source maps without a later citation prompt. After the independent code review, a regenerated profile was compared with the native-tested snapshot: content, design, source index and portrait bytes were identical; the asset only gained its individual filename, and the instructions gained citation clarification. The full native build was not repeated for that metadata-only refresh.
-
-## Runtime boundaries
-
-A personal profile is a saved snapshot, not a live desktop-folder connection. After changing the library, run update, export and replace the same profile. The PowerPoint add-in can cache its skill list; reload it and start a fresh chat if the installed profile or version is stale. Core upgrades and personal profile refreshes remain separate.
-
-Outlook was excluded at the user's request. No Outlook account, enterprise connector, real client deck or new embedded-object approval scenario was exercised in this release. Embedded-object preservation remains covered by the automated fixtures. Semantic curation and final slide composition still depend on Claude's actual host tools and the supplied references.
-
-Raw Claude transcripts, account details, personal libraries and reference files are not included in this public repository.
+Raw transcripts, account identifiers, test portraits and personal workspaces are not published in the repository.
